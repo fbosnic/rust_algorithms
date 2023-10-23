@@ -10,12 +10,12 @@ enum Color {
 }
 
 pub struct RBNode<K: Ord, V> {
-    key: K,
-    value: V,
+    pub key: K,
+    pub value: V,
     color: Color,
-    parent: *mut RBNode<K, V>,
-    left: *mut RBNode<K, V>,
-    right: *mut RBNode<K, V>,
+    pub parent: *mut RBNode<K, V>,
+    pub left: *mut RBNode<K, V>,
+    pub right: *mut RBNode<K, V>,
 }
 
 impl<K: Ord, V> RBNode<K, V> {
@@ -47,17 +47,52 @@ impl<K: Ord, V> RBTree<K, V> {
     }
 
     pub fn find(&self, key: &K) -> Option<&V> {
+        let option = self.find_node(key);
+        return match option {
+            None => None,
+            Some(node) => Some(&node.value),
+        };
+    }
+
+    pub fn find_node(&self, key: &K) -> Option<&RBNode<K, V>> {
         unsafe {
             let mut node = self.root;
             while !node.is_null() {
                 node = match (*node).key.cmp(key) {
                     Ordering::Less => (*node).right,
-                    Ordering::Equal => return Some(&(*node).value),
+                    Ordering::Equal => return Some(&(*node)),
                     Ordering::Greater => (*node).left,
                 }
             }
         }
         None
+    }
+
+    pub fn next_smallest(&self, node: &RBNode<K, V>) -> Option<&RBNode<K, V>> {
+        let x: &RBNode<K, V> = node;
+        if !x.right.is_null() {
+            let mut x: *const RBNode<K, V> = x.right;
+            unsafe {
+                while !(*x).left.is_null() && !(*x).right.is_null() {
+                    if !(*x).left.is_null() {
+                        x = (*x).left;
+                        continue;
+                    }
+                    x = (*x).right;
+                }
+                return Some(&(*x));
+            }
+        } else if !x.parent.is_null(){
+            unsafe {
+                let mut x: *const RBNode<K, V> = &(*x);
+                while x == (*(*x).parent).right {
+                    x = (*x).parent;
+                }
+                return Some(&(*x));
+            }
+        }
+        return None
+
     }
 
     pub fn insert(&mut self, key: K, value: V) {

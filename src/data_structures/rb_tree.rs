@@ -664,6 +664,8 @@ impl<'a, K: Ord, V> Iterator for RBTreeIterator<'a, K, V> {
 #[cfg(test)]
 mod tests {
     use super::RBTree;
+    use rand::seq::SliceRandom;
+    use rand::thread_rng;
 
     #[test]
     fn find() {
@@ -700,5 +702,25 @@ mod tests {
         tree.delete(&11);
         let s: String = tree.iter().map(|x| x.value).collect();
         assert_eq!(s, "hlo orl!");
+    }
+
+    #[test]
+    fn forward_backward_movements() {
+        let mut tree = RBTree::<usize, usize>::new();
+        let N = 100;
+        let mut vec: Vec<usize> = (0..N).collect();
+        vec.shuffle(&mut thread_rng());
+        for i in vec {
+            tree.insert(i, i);
+        }
+        let first = tree.find_node(&0).unwrap();
+        let last = tree.find_node(&(N-1)).unwrap();
+        assert!(tree.previous_by_key(first).is_none());
+        assert!(tree.next_by_key(last).is_none());
+        for i in 1..N-1 {
+            let node = tree.find_node(&i).unwrap();
+            assert_eq!(tree.previous_by_key(node).unwrap().key, i-1);
+            assert_eq!(tree.next_by_key(node).unwrap().key, i+1);
+        }
     }
 }

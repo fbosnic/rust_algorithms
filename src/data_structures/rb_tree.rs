@@ -68,31 +68,48 @@ impl<K: Ord, V> RBTree<K, V> {
         None
     }
 
-    pub fn next_smallest(&self, node: &RBNode<K, V>) -> Option<&RBNode<K, V>> {
-        let x: &RBNode<K, V> = node;
-        if !x.right.is_null() {
-            let mut x: *const RBNode<K, V> = x.right;
-            unsafe {
-                while !(*x).left.is_null() && !(*x).right.is_null() {
-                    if !(*x).left.is_null() {
-                        x = (*x).left;
-                        continue;
+    pub fn next_by_key(&self, node: &RBNode<K, V>) -> Option<&RBNode<K, V>> {
+        unsafe {
+            let mut x: *const RBNode<K, V> = &(*node);
+            if !(*x).right.is_null() {
+                x = (*x).right;
+                while !(*x).left.is_null() {
+                    x = (*x).left;
+                }
+                return Some(&(*x));
+            } else {
+                while !(*x).parent.is_null() {
+                    let p = (*x).parent;
+                    if x == (*p).left {
+                        return Some(&(*p));
                     }
+                    x = p;
+                }
+                return None
+            }
+        }
+    }
+
+    pub fn previous_by_key(&self, node: &RBNode<K, V>) -> Option<&RBNode<K, V>> {
+        unsafe {
+            let mut x: *const RBNode<K, V> = &(*node);
+            if !(*x).left.is_null() {
+                x = (*x).left;
+                while !(*x).right.is_null() {
                     x = (*x).right;
                 }
                 return Some(&(*x));
-            }
-        } else if !x.parent.is_null(){
-            unsafe {
-                let mut x: *const RBNode<K, V> = &(*x);
-                while x == (*(*x).parent).right {
-                    x = (*x).parent;
+            } else {
+                while !(*x).parent.is_null() {
+                    let p = (*x).parent;
+                    if x == (*p).right{
+                        return Some(&(*p));
+                    }
+                    x = p;
                 }
-                return Some(&(*x));
+                return None
             }
         }
-        return None
-
     }
 
     pub fn insert(&mut self, key: K, value: V) {
